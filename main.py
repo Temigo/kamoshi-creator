@@ -1,5 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# KAMOSHI CREATOR
+# Main file
 
 #import kivy
 #kivy.require('1.8.0')
@@ -9,10 +11,11 @@ from kivy.lang import Builder
 from kivy.uix.button import Button
 
 from kivy.uix.widget import Widget
-from kivy.graphics import Color, Ellipse, Line, Mesh, Point
+from kivy.graphics import Color, Ellipse, Line, Mesh, Point, Rectangle
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.relativelayout import RelativeLayout
 from kivy.properties import ListProperty
 from kivy.uix.slider import Slider
 
@@ -22,13 +25,81 @@ __author__ = 'Temigo'
 #Builder.load_file('kamoshicreator.kv')
 
 
-class Layer():
-    def __init__(self, points=None):
+class GraphicEdge(Widget):
+    def __init__(self, x1, y1, x2, y2, **kwargs):
+        super(GraphicEdge, self).__init__(**kwargs)
+        self.points = [x1, y1, x2, y2]
+
+    def draw(self):
+        with self.canvas:
+            Color(0, 0, 0)
+            Line(points=self.points, width=1.0)
+
+
+class GraphicPoint(Widget):
+    d = 30.  # Diameter
+
+    def __init__(self, x=0, y=0, **kwargs):
+        super(GraphicPoint, self).__init__(**kwargs)
+        self.x = x
+        self.y = y
+        self.pos = (x, y)
+        self.size = (30, 30)
+
+    def draw(self, selected=False):
+        print "Drawing GraphicPoint"
+        with self.canvas:
+            if selected:
+                Color(0, 1, 1)
+            else:
+                Color(1, 0, 0)
+            Ellipse(pos=(self.x, self.y), size=(self.d, self.d))
+
+    def on_touch_down(self, touch):
+        self.draw(selected=True)
+
+
+class Layer(Widget):
+    def __init__(self, points=None, **kwargs):
+        """
+        Defines a paper layer
+        :param points: :class: ` list`  of :class: GraphicPoint
+        :param kwargs:
+        :return:
+        """
+        super(Layer, self).__init__(**kwargs)
+
+        self.pos_hint = {'x': 0, 'y': 0}
+        self.size_hint = (1, 1)
+
         if points is None:
             points = []
         self.points = points
-        self.edges = ListProperty([])
-        self.recto = True
+        self.edges = []  # Existing folds
+        self.recto = True  # Flag recto/verso
+        for point in self.points:
+            self.add_widget(point)
+        for edge in self.edges:
+            self.add_widget(edge)
+
+    def draw(self):
+        """
+        Draw the layer in its canvas
+        :return:
+        """
+        with self.canvas:
+            self.canvas.clear() # FIXME efface les layers antérieures ?
+            if self.recto:  # color according to recto/verso
+                Color(1, 0, 0)
+            else:
+                Color(1, 1, 1)  # White
+            Rectangle(pos=self.pos, size=self.size)  # Paper
+
+            for point in self.points:
+                point.draw()
+
+            for edge in self.edges:
+                edge.draw()
 
 
 class Toolbar(Widget):
@@ -52,36 +123,26 @@ class Toolbar(Widget):
         print "Scale"
 
 
-class PaperWidget(Widget):
-    select = ListProperty([(100, 100), (300, 300), (100, 300), (300, 100)])
+class PaperLayout(RelativeLayout):
     d = 30.
     IS_SELECTING = False
     first_point = None # When selecting a couple of points
     last_point = None
-    layers = [Layer(points=[(100, 100), (300, 300), (100, 300), (300, 100)])]
+    layers = [Layer(points=[GraphicPoint(100, 100), GraphicPoint(300, 300), GraphicPoint(100, 300), GraphicPoint(300, 100)])]
     current_layer = 0
-    
+
     def __init__(self, **kwargs):
-        super(PaperWidget, self).__init__(**kwargs)
-        (root_x, root_y) = self.pos
-        """with self.canvas:
-            Color(1, 1, 0)
-            for point in self.select:
-                (x, y) = point
-                Ellipse(pos=(x - self.d / 2+root_x, y - self.d / 2+root_y), size=(self.d, self.d))"""
+        super(PaperLayout, self).__init__(**kwargs)
         for layer in self.layers:
-            self.draw_layer(layer)
+            self.add_widget(layer)
+
+    def do_layout(self, *args):
+        super(PaperLayout, self).do_layout(*args)
+        for layer in self.layers:
+            layer.draw()
 
     def on_touch_down(self, touch):
         current_point = None
-        for point in self.select:
-            (x, y) = point
-            if sqrt(pow(x - touch.x, 2) + pow(y-touch.y,2)) <= self.d:
-                current_point = point
-                with self.canvas:
-                    Color(1,0,0)
-                    Ellipse(pos=(x - self.d / 2, y - self.d / 2), size=(self.d, self.d))
-                break
 
         if current_point is not None:
             if self.IS_SELECTING:
@@ -99,15 +160,11 @@ class PaperWidget(Widget):
 
     def new_step(self):
         print "New step !"
-        pass
+        
 
-    def draw_layer(self, layer):
-        with self.canvas:
-            self.canvas.clear()
-            Color(1, 1, 0)
-            for point in layer.points:
-                (x, y) = point
-                Ellipse(pos=(x, y), size=(self.d, self.d))
+class PaperWidget(Widget):
+    def __init__(self, **kwargs):
+        super(PaperWidget, self).__init__(**kwargs)
 
 
 
