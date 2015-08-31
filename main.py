@@ -22,6 +22,15 @@ __author__ = 'Temigo'
 #Builder.load_file('kamoshicreator.kv')
 
 
+class Layer():
+    def __init__(self, points=None):
+        if points is None:
+            points = []
+        self.points = points
+        self.edges = ListProperty([])
+        self.recto = True
+
+
 class Toolbar(Widget):
     def __init__(self, **kwargs):
         super(Toolbar, self).__init__(**kwargs)
@@ -49,15 +58,19 @@ class PaperWidget(Widget):
     IS_SELECTING = False
     first_point = None # When selecting a couple of points
     last_point = None
-
+    layers = [Layer(points=[(100, 100), (300, 300), (100, 300), (300, 100)])]
+    current_layer = 0
+    
     def __init__(self, **kwargs):
         super(PaperWidget, self).__init__(**kwargs)
         (root_x, root_y) = self.pos
-        with self.canvas:
+        """with self.canvas:
             Color(1, 1, 0)
             for point in self.select:
                 (x, y) = point
-                Ellipse(pos=(x - self.d / 2+root_x, y - self.d / 2+root_y), size=(self.d, self.d))
+                Ellipse(pos=(x - self.d / 2+root_x, y - self.d / 2+root_y), size=(self.d, self.d))"""
+        for layer in self.layers:
+            self.draw_layer(layer)
 
     def on_touch_down(self, touch):
         current_point = None
@@ -88,10 +101,24 @@ class PaperWidget(Widget):
         print "New step !"
         pass
 
+    def draw_layer(self, layer):
+        with self.canvas:
+            self.canvas.clear()
+            Color(1, 1, 0)
+            for point in layer.points:
+                (x, y) = point
+                Ellipse(pos=(x, y), size=(self.d, self.d))
+
+
 
 class KamoshiPaintLayout(FloatLayout):
     def __init__(self, **kwargs):
         super(KamoshiPaintLayout, self).__init__(**kwargs)
+
+
+class LayersLayout(BoxLayout):
+    def __init__(self, **kwargs):
+        super(LayersLayout, self).__init__(**kwargs)
 
 
 class LayersSlider(Slider):

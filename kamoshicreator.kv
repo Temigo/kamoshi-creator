@@ -6,7 +6,7 @@
             rgb: 1, 0.5, 1
         Rectangle:
             pos: self.pos
-            size: 200, 200
+            size: self.size
 
 <Toolbar>:
     canvas:
@@ -38,8 +38,9 @@
 
 <LayersSlider>:
     orientation: 'vertical'
-    min: -10
+    min: 0
     max: +10
+    step: 1
     value: 0
 
 <KamoshiPaintLayout>:
@@ -50,9 +51,21 @@
             size: self.size
             pos: self.pos
     size: root.size
+    base: min(root.size[0]/2, root.size[1]/2)
     PaperWidget:
         size_hint: None, None
-        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        size: root.base, root.base
+        pos_hint: {'center_y': 0.5, 'center_x': 0.5}
+
+<LayersLayout>:
+    orientation: 'vertical'
+    Label:
+        text: str(layers_slider.value)
+        size_hint: 1, 0.1
+    LayersSlider:
+        size_hint: 1, 0.9
+        id: layers_slider
+
 
 <KamoshiCreatorMain>:
     BoxLayout:
@@ -60,7 +73,7 @@
         size: root.size
         pos: root.pos
 
-        LayersSlider:
+        LayersLayout:
             size_hint: 0.1, 1
         KamoshiPaintLayout:
             size_hint: 0.9, 1
