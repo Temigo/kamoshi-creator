@@ -39,23 +39,27 @@ class GraphicEdge(Widget):
 class GraphicPoint(Widget):
     d = 30.  # Diameter
 
-    def __init__(self, x=0, y=0, **kwargs):
+    def __init__(self, x, y, **kwargs):
         super(GraphicPoint, self).__init__(**kwargs)
-        self.x = x
-        self.y = y
-        self.pos = (x, y)
-        self.size = (30, 30)
+        #self.x = x
+        #self.y = y
+        #self.pos = (x, y)
+        self.pos = (x,y)
+        #self.size_hint = (None, None)
+        #self.size = (30, 30)
 
     def draw(self, selected=False):
-        print "Drawing GraphicPoint"
-        with self.canvas:
+        print "Drawing GraphicPoint", self  # FIXME Occurs 3 times ?
+        with self.parent.canvas:
+            print self.pos_hint, self.size, self.parent.pos, self.parent.size, self.x
             if selected:
                 Color(0, 1, 1)
             else:
                 Color(1, 0, 0)
-            Ellipse(pos=(self.x, self.y), size=(self.d, self.d))
+            Ellipse(pos=self.pos, size=(self.d, self.d))
 
     def on_touch_down(self, touch):
+        print "Touch !"
         self.draw(selected=True)
 
 
@@ -77,8 +81,9 @@ class Layer(Widget):
         self.points = points
         self.edges = []  # Existing folds
         self.recto = True  # Flag recto/verso
+
         for point in self.points:
-            self.add_widget(point)
+            self.add_widget(point, index=1)
         for edge in self.edges:
             self.add_widget(edge)
 
@@ -88,12 +93,12 @@ class Layer(Widget):
         :return:
         """
         with self.canvas:
-            self.canvas.clear() # FIXME efface les layers antérieures ?
+            self.canvas.clear()  # FIXME efface les layers antérieures ?
             if self.recto:  # color according to recto/verso
-                Color(1, 0, 0)
+                Color(1, 0, 0, 0.5)
             else:
-                Color(1, 1, 1)  # White
-            Rectangle(pos=self.pos, size=self.size)  # Paper
+                Color(1, 1, 1, 0.5)  # White
+            #Rectangle(pos=self.pos, size=self.size)  # Paper
 
             for point in self.points:
                 point.draw()
@@ -128,7 +133,7 @@ class PaperLayout(RelativeLayout):
     IS_SELECTING = False
     first_point = None # When selecting a couple of points
     last_point = None
-    layers = [Layer(points=[GraphicPoint(100, 100), GraphicPoint(300, 300), GraphicPoint(100, 300), GraphicPoint(300, 100)])]
+    layers = [Layer(points=[GraphicPoint(0, 0), GraphicPoint(150, 100)])]
     current_layer = 0
 
     def __init__(self, **kwargs):
@@ -160,12 +165,11 @@ class PaperLayout(RelativeLayout):
 
     def new_step(self):
         print "New step !"
-        
+
 
 class PaperWidget(Widget):
     def __init__(self, **kwargs):
         super(PaperWidget, self).__init__(**kwargs)
-
 
 
 class KamoshiPaintLayout(FloatLayout):

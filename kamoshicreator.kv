@@ -3,19 +3,12 @@
 <PaperLayout>:
     canvas:
         Color:
-            rgba: 0, 0, 1, 0.5
+            rgba: 0, 0, 1, 0.1
         Rectangle:
             pos: 0, 0  # Relative Layout !
             size: self.size
 
 <PaperWidget>:
-    canvas.before:
-        Color:
-            rgba: 1, 0.5, 1, 0.5
-        Rectangle:
-            pos: self.pos
-            size: self.size
-
     PaperLayout:
         size: root.size
         pos: root.pos
