@@ -16,7 +16,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
-from kivy.properties import ListProperty
+from kivy.uix.scatterlayout import ScatterLayout
+from kivy.properties import ListProperty, ObjectProperty
 from kivy.uix.slider import Slider
 
 from math import sqrt
@@ -41,17 +42,14 @@ class GraphicPoint(Widget):
 
     def __init__(self, x, y, **kwargs):
         super(GraphicPoint, self).__init__(**kwargs)
-        #self.x = x
-        #self.y = y
-        #self.pos = (x, y)
-        self.pos = (x,y)
-        #self.size_hint = (None, None)
-        #self.size = (30, 30)
+        self.pos_hint = {'x': x, 'y': y}
+        self.size_hint=(None, None)
+        self.size = (100, 100)
 
     def draw(self, selected=False):
-        print "Drawing GraphicPoint", self  # FIXME Occurs 3 times ?
-        with self.parent.canvas:
-            print self.pos_hint, self.size, self.parent.pos, self.parent.size, self.x
+        # FIXME Occurs 3 times ?
+        print self.pos, self.size
+        with self.parent.parent.canvas:
             if selected:
                 Color(0, 1, 1)
             else:
@@ -63,6 +61,34 @@ class GraphicPoint(Widget):
         self.draw(selected=True)
 
 
+class LayerLayout(RelativeLayout):
+    def __init__(self, points=None, **kwargs):
+        super(LayerLayout, self).__init__(**kwargs)
+
+        if points is None:
+            points = []
+        self.points = points
+        self.edges = []  # Existing folds
+
+        for point in self.points:
+            self.add_widget(point)
+        for edge in self.edges:
+            self.add_widget(edge)
+
+    def draw(self):
+        self.size = self.parent.size
+        self.pos = self.parent.pos
+        with self.parent.canvas:
+            Color(0, 1, 0, 0.5)
+            Rectangle(pos=self.pos, size=self.size)
+            for point in self.points:
+                point.draw()
+
+            for edge in self.edges:
+                edge.draw()
+            print "Drawing LayerLayout"
+
+
 class Layer(Widget):
     def __init__(self, points=None, **kwargs):
         """
@@ -72,26 +98,20 @@ class Layer(Widget):
         :return:
         """
         super(Layer, self).__init__(**kwargs)
-
         self.pos_hint = {'x': 0, 'y': 0}
         self.size_hint = (1, 1)
 
-        if points is None:
-            points = []
-        self.points = points
-        self.edges = []  # Existing folds
         self.recto = True  # Flag recto/verso
-
-        for point in self.points:
-            self.add_widget(point, index=1)
-        for edge in self.edges:
-            self.add_widget(edge)
+        self.layout = LayerLayout(points, size=self.size, pos=(0,0))
+        print self.size, self.pos
+        self.add_widget(self.layout)
 
     def draw(self):
         """
         Draw the layer in its canvas
         :return:
         """
+
         with self.canvas:
             self.canvas.clear()  # FIXME efface les layers antérieures ?
             if self.recto:  # color according to recto/verso
@@ -99,12 +119,7 @@ class Layer(Widget):
             else:
                 Color(1, 1, 1, 0.5)  # White
             #Rectangle(pos=self.pos, size=self.size)  # Paper
-
-            for point in self.points:
-                point.draw()
-
-            for edge in self.edges:
-                edge.draw()
+        self.layout.draw()
 
 
 class Toolbar(Widget):
@@ -133,7 +148,7 @@ class PaperLayout(RelativeLayout):
     IS_SELECTING = False
     first_point = None # When selecting a couple of points
     last_point = None
-    layers = [Layer(points=[GraphicPoint(0, 0), GraphicPoint(150, 100)])]
+    layers = [Layer(points=[GraphicPoint(0, 0), GraphicPoint(1, 0), GraphicPoint(0, 1)])]
     current_layer = 0
 
     def __init__(self, **kwargs):
