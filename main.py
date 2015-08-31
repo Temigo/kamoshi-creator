@@ -44,7 +44,7 @@ class GraphicPoint(Widget):
         super(GraphicPoint, self).__init__(**kwargs)
         self.pos_hint = {'x': x, 'y': y}
         self.size_hint=(None, None)
-        self.size = (100, 100)
+        self.size = (self.d, self.d)
 
     def draw(self, selected=False):
         # FIXME Occurs 3 times ?
@@ -57,8 +57,11 @@ class GraphicPoint(Widget):
             Ellipse(pos=self.pos, size=(self.d, self.d))
 
     def on_touch_down(self, touch):
-        print "Touch !"
-        self.draw(selected=True)
+        super(GraphicPoint, self).on_touch_down(touch)
+
+        if self.collide_point(touch.x, touch.y):
+            print "Touch !"
+            self.draw(selected=True)
 
 
 class LayerLayout(RelativeLayout):
@@ -87,6 +90,10 @@ class LayerLayout(RelativeLayout):
             for edge in self.edges:
                 edge.draw()
             print "Drawing LayerLayout"
+
+    def on_touch_down(self, touch):
+        super(LayerLayout, self).on_touch_down(touch)
+        print "Touch ! LayerLayout"
 
 
 class Layer(Widget):
@@ -121,6 +128,10 @@ class Layer(Widget):
             #Rectangle(pos=self.pos, size=self.size)  # Paper
         self.layout.draw()
 
+    def on_touch_down(self, touch):
+        super(Layer, self).on_touch_down(touch)
+        print "Touch ! Layer"
+
 
 class Toolbar(Widget):
     def __init__(self, **kwargs):
@@ -148,7 +159,7 @@ class PaperLayout(RelativeLayout):
     IS_SELECTING = False
     first_point = None # When selecting a couple of points
     last_point = None
-    layers = [Layer(points=[GraphicPoint(0, 0), GraphicPoint(1, 0), GraphicPoint(0, 1)])]
+    layers = [Layer(points=[GraphicPoint(0, 0), GraphicPoint(1, 0), GraphicPoint(0, 1), GraphicPoint(1, 1)])]
     current_layer = 0
 
     def __init__(self, **kwargs):
@@ -162,6 +173,8 @@ class PaperLayout(RelativeLayout):
             layer.draw()
 
     def on_touch_down(self, touch):
+        super(PaperLayout, self).on_touch_down(touch)
+        print "Touch ! PaperLayout", self.children
         current_point = None
 
         if current_point is not None:
