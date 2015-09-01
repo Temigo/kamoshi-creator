@@ -32,7 +32,8 @@ class GraphicEdge(Widget):
         self.points = [x1, y1, x2, y2]
 
     def draw(self):
-        with self.canvas:
+        print "Drawing edge"
+        with self.parent.parent.canvas:
             Color(0, 0, 0)
             Line(points=self.points, width=1.0)
 
@@ -57,21 +58,23 @@ class GraphicPoint(Widget):
             Ellipse(pos=self.pos, size=(self.d, self.d))
 
     def on_touch_down(self, touch):
-        super(GraphicPoint, self).on_touch_down(touch)
-
         if self.collide_point(touch.x, touch.y):
             print "Touch !"
             self.draw(selected=True)
+            self.parent.parent.parent.current_point = self
+        super(GraphicPoint, self).on_touch_down(touch)
 
 
 class LayerLayout(RelativeLayout):
-    def __init__(self, points=None, **kwargs):
+    def __init__(self, points=None, edges=None, **kwargs):
         super(LayerLayout, self).__init__(**kwargs)
 
         if points is None:
             points = []
+        if edges is None:
+            edges = []
         self.points = points
-        self.edges = []  # Existing folds
+        self.edges = edges  # Existing folds
 
         for point in self.points:
             self.add_widget(point)
@@ -97,7 +100,7 @@ class LayerLayout(RelativeLayout):
 
 
 class Layer(Widget):
-    def __init__(self, points=None, **kwargs):
+    def __init__(self, points=None, edges=None, **kwargs):
         """
         Defines a paper layer
         :param points: :class: ` list`  of :class: GraphicPoint
@@ -109,8 +112,8 @@ class Layer(Widget):
         self.size_hint = (1, 1)
 
         self.recto = True  # Flag recto/verso
-        self.layout = LayerLayout(points, size=self.size, pos=(0,0))
-        print self.size, self.pos
+        self.layout = LayerLayout(points, edges, size=self.size, pos=(0,0))
+
         self.add_widget(self.layout)
 
     def draw(self):
@@ -125,7 +128,7 @@ class Layer(Widget):
                 Color(1, 0, 0, 0.5)
             else:
                 Color(1, 1, 1, 0.5)  # White
-            #Rectangle(pos=self.pos, size=self.size)  # Paper
+            Rectangle(pos=self.pos, size=self.size)  # Paper
         self.layout.draw()
 
     def on_touch_down(self, touch):
@@ -159,8 +162,10 @@ class PaperLayout(RelativeLayout):
     IS_SELECTING = False
     first_point = None # When selecting a couple of points
     last_point = None
-    layers = [Layer(points=[GraphicPoint(0, 0), GraphicPoint(1, 0), GraphicPoint(0, 1), GraphicPoint(1, 1)])]
+    layers = [Layer(points=[GraphicPoint(0, 0), GraphicPoint(1, 0), GraphicPoint(0, 1), GraphicPoint(1, 1)],
+                    edges=[GraphicEdge(0, 0, 1, 0)])]
     current_layer = 0
+    current_point = None
 
     def __init__(self, **kwargs):
         super(PaperLayout, self).__init__(**kwargs)
@@ -173,19 +178,26 @@ class PaperLayout(RelativeLayout):
             layer.draw()
 
     def on_touch_down(self, touch):
+        """ Trigger selection
+        :param touch:
+        :return:
+        """
         super(PaperLayout, self).on_touch_down(touch)
         print "Touch ! PaperLayout", self.children
-        current_point = None
 
-        if current_point is not None:
-            if self.IS_SELECTING:
-                self.last_point = current_point
+        if self.current_point is not None:
+            if self.IS_SELECTING:  # End of selection
+                if self.current_point == self.first_point:
+                    # Deselect
+                    self.current_point.draw()
+                else:
+                    self.last_point = self.current_point
+                    self.new_step()
                 self.IS_SELECTING = False
-                self.new_step()
-            else:
-                self.first_point = current_point
+                self.current_point = None
+            else:  # Begin selection
+                self.first_point = self.current_point
                 self.IS_SELECTING = True
-                #touch.ud['line'] = Line(points=(touch.x, touch.y))
 
     def on_touch_move(self, touch):
         #touch.ud['line'].points += [touch.x, touch.y]
