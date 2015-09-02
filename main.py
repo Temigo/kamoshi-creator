@@ -22,7 +22,7 @@ from kivy.uix.slider import Slider
 
 from math import sqrt
 
-from graphic import GraphicEdge, GraphicPoint
+from graphic import GraphicEdge, GraphicPoint, GraphicEdge2
 from layer import Layer, LayerLayout
 
 __author__ = 'Temigo'
@@ -56,8 +56,14 @@ class PaperLayout(RelativeLayout):
     IS_SELECTING = False
     first_point = None  # When selecting a couple of points
     last_point = None
-    layers = ListProperty([Layer(points=[GraphicPoint(0, 0), GraphicPoint(1, 0), GraphicPoint(0, 1), GraphicPoint(1, 1)],
-                    edges=[GraphicEdge(0, 0, 1, 0), GraphicEdge(1, 0, 1, 1), GraphicEdge(0, 0, 0, 1), GraphicEdge(0, 1, 1, 1)])])
+
+    init_points = [GraphicPoint(0, 0), GraphicPoint(1, 0), GraphicPoint(0, 1), GraphicPoint(1, 1)]
+    layers = ListProperty([Layer(points=init_points,
+                                 edges=[GraphicEdge2(init_points[0], init_points[1]),
+                                        GraphicEdge2(init_points[1], init_points[3]),
+                                        GraphicEdge2(init_points[0], init_points[2]),
+                                        GraphicEdge2(init_points[2], init_points[3])])])
+                           # [GraphicEdge(0, 0, 1, 0), GraphicEdge(1, 0, 1, 1), GraphicEdge(0, 0, 0, 1), GraphicEdge(0, 1, 1, 1)])]
     current_layer = 0
     current_point = None
 

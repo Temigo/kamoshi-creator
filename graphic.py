@@ -9,6 +9,20 @@ from math import sqrt
 __author__ = 'Temigo'
 
 
+class GraphicEdge2(Widget):
+    def __init__(self, point1, point2, **kwargs):
+        super(GraphicEdge2, self).__init__(**kwargs)
+        self.start = point1
+        self.end = point2
+
+    def draw(self):
+        print "Drawing edge"
+        with self.parent.parent.canvas:
+            Color(0, 0, 0)
+            Line(points=[self.start.x, self.start.y, self.end.x, self.end.y], width=5)
+
+
+
 class GraphicEdge(Widget):
     def __init__(self, x1, y1, x2, y2, **kwargs):
         super(GraphicEdge, self).__init__(**kwargs)

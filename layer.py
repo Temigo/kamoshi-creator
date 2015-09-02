@@ -33,7 +33,6 @@ class LayerLayout(RelativeLayout):
             Rectangle(pos=self.pos, size=self.size)
             for point in self.points:
                 point.draw()
-
             for edge in self.edges:
                 edge.draw()
 
@@ -59,13 +58,11 @@ class Layer(Widget):
 
         self.add_widget(self.layout)
 
-
     def draw(self):
         """
         Draw the layer in its canvas
         :return:
         """
-
         with self.canvas:
             self.canvas.clear()  # FIXME efface les layers antérieures ? Non car n'efface que cette layer ?
             if self.recto:  # color according to recto/verso
