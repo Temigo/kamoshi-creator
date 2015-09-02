@@ -57,7 +57,7 @@ class PaperLayout(RelativeLayout):
     first_point = None  # When selecting a couple of points
     last_point = None
     layers = ListProperty([Layer(points=[GraphicPoint(0, 0), GraphicPoint(1, 0), GraphicPoint(0, 1), GraphicPoint(1, 1)],
-                    edges=[GraphicEdge(0, 0, 1, 0)])])
+                    edges=[GraphicEdge(0, 0, 1, 0), GraphicEdge(1, 0, 1, 1), GraphicEdge(0, 0, 0, 1), GraphicEdge(0, 1, 1, 1)])])
     current_layer = 0
     current_point = None
 
@@ -76,7 +76,6 @@ class PaperLayout(RelativeLayout):
         with self.canvas:
             #self.canvas.clear()
             self.do_layout()
-        super(PaperLayout, self).on_layers(instance, value)
 
     def do_layout(self, *args):
         # self.canvas.clear()

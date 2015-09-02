@@ -13,13 +13,17 @@ class GraphicEdge(Widget):
     def __init__(self, x1, y1, x2, y2, **kwargs):
         super(GraphicEdge, self).__init__(**kwargs)
         self.points = [x1, y1, x2, y2]
+        self.pos_hint = {'x': x1, 'y': y1}
+        self.x2 = x2
+        self.y2 = y2
 
     def draw(self):
         print "Drawing edge"
         with self.parent.parent.canvas:
             Color(0, 0, 0)
-            Line(points=self.points, width=1.0)
-
+            (x, y) = self.to_parent(self.x2 * self.parent.size[0], self.y2 * self.parent.size[1])
+            Line(points=[self.x, self.y, x, y], width=5)
+            print self.x, self.y, x, y
 
 class GraphicPoint(Widget):
     d = 30.  # Diameter
@@ -27,7 +31,7 @@ class GraphicPoint(Widget):
     def __init__(self, x, y, **kwargs):
         super(GraphicPoint, self).__init__(**kwargs)
         self.pos_hint = {'x': x, 'y': y}
-        self.size_hint=(None, None)
+        self.size_hint = (None, None)
         self.size = (self.d, self.d)
 
     def __repr__(self):
