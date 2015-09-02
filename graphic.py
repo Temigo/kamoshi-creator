@@ -1,8 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#--------------------------------
+#       KAMOSHI CREATOR         |
+#                  v0.1         |
+#--------------------------------
 
 from kivy.uix.widget import Widget
-from kivy.graphics import Color, Ellipse, Line, Mesh, Point, Rectangle
+from kivy.graphics import Color, Ellipse, Line
 
 from math import sqrt
 
