@@ -21,119 +21,13 @@ from kivy.properties import ListProperty, ObjectProperty
 from kivy.uix.slider import Slider
 
 from math import sqrt
+
+from graphic import GraphicEdge, GraphicPoint
+from layer import Layer, LayerLayout
+
 __author__ = 'Temigo'
 
 #Builder.load_file('kamoshicreator.kv')
-
-
-class GraphicEdge(Widget):
-    def __init__(self, x1, y1, x2, y2, **kwargs):
-        super(GraphicEdge, self).__init__(**kwargs)
-        self.points = [x1, y1, x2, y2]
-
-    def draw(self):
-        print "Drawing edge"
-        with self.parent.parent.canvas:
-            Color(0, 0, 0)
-            Line(points=self.points, width=1.0)
-
-
-class GraphicPoint(Widget):
-    d = 30.  # Diameter
-
-    def __init__(self, x, y, **kwargs):
-        super(GraphicPoint, self).__init__(**kwargs)
-        self.pos_hint = {'x': x, 'y': y}
-        self.size_hint=(None, None)
-        self.size = (self.d, self.d)
-
-    def draw(self, selected=False):
-        # FIXME Occurs 3 times ?
-        print self.pos, self.size
-        with self.parent.parent.canvas:
-            if selected:
-                Color(0, 1, 1)
-            else:
-                Color(1, 0, 0)
-            Ellipse(pos=self.pos, size=(self.d, self.d))
-
-    def on_touch_down(self, touch):
-        if self.collide_point(touch.x, touch.y):
-            print "Touch !"
-            self.draw(selected=True)
-            self.parent.parent.parent.current_point = self
-        super(GraphicPoint, self).on_touch_down(touch)
-
-
-class LayerLayout(RelativeLayout):
-    def __init__(self, points=None, edges=None, **kwargs):
-        super(LayerLayout, self).__init__(**kwargs)
-
-        if points is None:
-            points = []
-        if edges is None:
-            edges = []
-        self.points = points
-        self.edges = edges  # Existing folds
-
-        for point in self.points:
-            self.add_widget(point)
-        for edge in self.edges:
-            self.add_widget(edge)
-
-    def draw(self):
-        self.size = self.parent.size
-        self.pos = self.parent.pos
-        with self.parent.canvas:
-            Color(0, 1, 0, 0.5)
-            Rectangle(pos=self.pos, size=self.size)
-            for point in self.points:
-                point.draw()
-
-            for edge in self.edges:
-                edge.draw()
-            print "Drawing LayerLayout"
-
-    def on_touch_down(self, touch):
-        super(LayerLayout, self).on_touch_down(touch)
-        print "Touch ! LayerLayout"
-
-
-class Layer(Widget):
-    def __init__(self, points=None, edges=None, **kwargs):
-        """
-        Defines a paper layer
-        :param points: :class: ` list`  of :class: GraphicPoint
-        :param kwargs:
-        :return:
-        """
-        super(Layer, self).__init__(**kwargs)
-        self.pos_hint = {'x': 0, 'y': 0}
-        self.size_hint = (1, 1)
-
-        self.recto = True  # Flag recto/verso
-        self.layout = LayerLayout(points, edges, size=self.size, pos=(0,0))
-
-        self.add_widget(self.layout)
-
-    def draw(self):
-        """
-        Draw the layer in its canvas
-        :return:
-        """
-
-        with self.canvas:
-            self.canvas.clear()  # FIXME efface les layers antérieures ?
-            if self.recto:  # color according to recto/verso
-                Color(1, 0, 0, 0.5)
-            else:
-                Color(1, 1, 1, 0.5)  # White
-            Rectangle(pos=self.pos, size=self.size)  # Paper
-        self.layout.draw()
-
-    def on_touch_down(self, touch):
-        super(Layer, self).on_touch_down(touch)
-        print "Touch ! Layer"
 
 
 class Toolbar(Widget):
@@ -160,10 +54,10 @@ class Toolbar(Widget):
 class PaperLayout(RelativeLayout):
     d = 30.
     IS_SELECTING = False
-    first_point = None # When selecting a couple of points
+    first_point = None  # When selecting a couple of points
     last_point = None
-    layers = [Layer(points=[GraphicPoint(0, 0), GraphicPoint(1, 0), GraphicPoint(0, 1), GraphicPoint(1, 1)],
-                    edges=[GraphicEdge(0, 0, 1, 0)])]
+    layers = ListProperty([Layer(points=[GraphicPoint(0, 0), GraphicPoint(1, 0), GraphicPoint(0, 1), GraphicPoint(1, 1)],
+                    edges=[GraphicEdge(0, 0, 1, 0)])])
     current_layer = 0
     current_point = None
 
@@ -172,8 +66,22 @@ class PaperLayout(RelativeLayout):
         for layer in self.layers:
             self.add_widget(layer)
 
+    def on_layers(self, instance, value):
+        """
+        Callback when self.layers is changed
+        :param instance:
+        :param value:
+        :return:
+        """
+        with self.canvas:
+            #self.canvas.clear()
+            self.do_layout()
+        super(PaperLayout, self).on_layers(instance, value)
+
     def do_layout(self, *args):
+        # self.canvas.clear()
         super(PaperLayout, self).do_layout(*args)
+
         for layer in self.layers:
             layer.draw()
 
@@ -203,8 +111,57 @@ class PaperLayout(RelativeLayout):
         #touch.ud['line'].points += [touch.x, touch.y]
         pass
 
+    @staticmethod
+    def is_under_bisector(x, y, x1, y1, x2, y2):
+        """
+        Determines if the point M(x,y) should be mirrored against bisector of (x1, y1) and (x2, y2)
+        Scalar product of 1->2 and 1->M should be less than half of distance 1-2
+        :return:
+        """
+        length = sqrt(pow((x2 - x1), 2) + pow(y2 - y1, 2))
+        a = ((x2 - x1) * (x - x1) + (y2 - y1) * (y - y1)) / length
+        b = 1. / 2. * length
+        if a == b:
+            return True, True
+        elif a < b:
+            return True, False
+        else:
+            return False, None
+
     def new_step(self):
-        print "New step !"
+        print "New step !", self.layers
+        layers_stack = self.layers[self.current_layer:]
+        x1 = self.first_point.x
+        y1 = self.first_point.y
+        x2 = self.last_point.x
+        y2 = self.last_point.y
+        for i in range(len(layers_stack)):
+            layer = layers_stack[i]
+            points_to_translate = []
+            keep_point = {}
+
+            for point in layer.layout.points:
+                print point, len(layer.layout.points)
+                # Position par rapport à la médiatrice
+                b1, b2 = self.is_under_bisector(point.x, point.y, x1, y1, x2, y2)
+                if b1:
+                    points_to_translate.append(point)
+                    keep_point[point] = b2
+                    #layer.remove_point(point)
+
+            for point in points_to_translate:
+                point.mirror(x1, y1, x2, y2)
+                layer.remove_point(point)
+                if keep_point[point]:
+                    new_point = GraphicPoint(0, 0)
+                    new_point.x = point.x
+                    new_point.y = point.y
+                    layer.add_point(new_point)
+
+            # TODO flip color
+            new_layer = Layer(points=points_to_translate)  # TODO : edges
+            self.layers.insert(i, new_layer)
+        print self.layers
 
 
 class PaperWidget(Widget):
