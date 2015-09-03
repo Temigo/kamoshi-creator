@@ -14,17 +14,21 @@ __author__ = 'Temigo'
 
 
 class GraphicEdge2(Widget):
+    start = None
+    end = None
+
     def __init__(self, point1, point2, **kwargs):
         super(GraphicEdge2, self).__init__(**kwargs)
         self.start = point1
         self.end = point2
 
+    def __repr__(self):
+        return "<" + self.start.__repr__() + "->" + self.end.__repr__() + ">"
+
     def draw(self):
-        print "Drawing edge"
         with self.parent.parent.canvas:
             Color(0, 0, 0)
             Line(points=[self.start.x, self.start.y, self.end.x, self.end.y], width=5)
-
 
 
 class GraphicEdge(Widget):
@@ -43,6 +47,7 @@ class GraphicEdge(Widget):
             Line(points=[self.x, self.y, x, y], width=5)
             print self.x, self.y, x, y
 
+
 class GraphicPoint(Widget):
     d = 30.  # Diameter
 
@@ -57,7 +62,6 @@ class GraphicPoint(Widget):
 
     def draw(self, selected=False):
         # FIXME Occurs 3 times ?
-        print self.pos, self.size
         with self.parent.parent.canvas:
             if selected:
                 Color(0, 1, 1)

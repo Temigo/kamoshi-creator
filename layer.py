@@ -29,12 +29,12 @@ class LayerLayout(RelativeLayout):
             self.add_widget(edge)
 
     def draw(self):
-        print "LayerLayout draw", self.points
+        print "LayerLayout draw", self.parent, self.points, self.edges
         self.size = self.parent.size
         self.pos = self.parent.pos
         with self.parent.canvas:
-            Color(0, 1, 0, 0.5)
-            Rectangle(pos=self.pos, size=self.size)
+            # Color(0, 1, 0, 0.5)
+            # Rectangle(pos=self.pos, size=self.size)
             for point in self.points:
                 point.draw()
             for edge in self.edges:
@@ -70,9 +70,9 @@ class Layer(Widget):
         with self.canvas:
             self.canvas.clear()  # FIXME efface les layers antérieures ? Non car n'efface que cette layer ?
             if self.recto:  # color according to recto/verso
-                Color(1, 0, 0, 0.5)
+                Color(1, 0, 0, 1)
             else:
-                Color(1, 1, 1, 0.5)  # White
+                Color(1, 1, 1, 1)  # White
             Rectangle(pos=self.pos, size=self.size)  # Paper
         self.layout.draw()
 
@@ -87,3 +87,11 @@ class Layer(Widget):
     def add_point(self, point):
         self.layout.add_widget(point)
         self.layout.points.append(point)
+
+    def remove_edge(self, edge):
+        self.layout.remove_widget(edge)
+        self.layout.edges.remove(edge)
+
+    def add_edge(self, edge):
+        self.layout.add_widget(edge)
+        self.layout.edges.append(edge)

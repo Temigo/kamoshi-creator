@@ -44,8 +44,10 @@ class PaperLayout(RelativeLayout):
         :param value:
         :return:
         """
+        print "on_layers", instance, value
         with self.canvas:
             #self.canvas.clear()
+            #self.add_widget(value)
             self.do_layout()
 
     def do_layout(self, *args):
@@ -91,7 +93,7 @@ class PaperLayout(RelativeLayout):
         length = sqrt(pow((x2 - x1), 2) + pow(y2 - y1, 2))
         a = ((x2 - x1) * (x - x1) + (y2 - y1) * (y - y1)) / length
         b = 1. / 2. * length
-        if a == b:
+        if a == b:  # On the bisector
             return True, True
         elif a < b:
             return True, False
@@ -109,26 +111,78 @@ class PaperLayout(RelativeLayout):
             layer = layers_stack[i]
             points_to_translate = []
             keep_point = {}
-
+            mirror_point = {}
             for point in layer.layout.points:
                 print point, len(layer.layout.points)
                 # Position par rapport à la médiatrice
                 b1, b2 = self.is_under_bisector(point.x, point.y, x1, y1, x2, y2)
                 if b1:
                     points_to_translate.append(point)
-                    keep_point[point] = b2
+                    keep_point[point] = b2  # Is it on bisector ?
                     #layer.remove_point(point)
-
+            print points_to_translate
             for point in points_to_translate:
+                # FIXME : changes when point is mirrored ? x and y are NumericProperty
+                mirror_point[point] = (point.x, point.y)  # Old coordinates
                 point.mirror(x1, y1, x2, y2)
                 layer.remove_point(point)
+
                 if keep_point[point]:
-                    new_point = GraphicPoint(0, 0)
+                    new_point = GraphicPoint(0, 0)  # FIXME calculate relative coordinates
                     new_point.x = point.x
                     new_point.y = point.y
                     layer.add_point(new_point)
+            print points_to_translate, keep_point, layer.layout.edges
+            new_edges = []
+            edges_to_remove = []
+            for edge in layer.layout.edges:
+                # b1, b2 = self.is_under_bisector(edge.start.x, edge.start.y, x1, y1, x2, y2)
+                # b3, b4 = self.is_under_bisector(edge.end.x, edge.end.y, x1, y1, x2, y2)
+                b1 = edge.start in points_to_translate
+                b2 = keep_point[edge.start] if b1 else False
+                b3 = edge.end in points_to_translate
+                b4 = keep_point[edge.end] if b3 else False
+                print "Edge", edge, edge.start, edge.end, b1 ,b2, b3, b4
+                if b2 and b4:  # Edge is within bisector
+                    new_edge = GraphicEdge2(edge.start, edge.end)  # FIXME : start and stop have been duplicated
+                    new_edges.append(new_edge)
+                elif b2 or b4:  # Start (x)or end of edge is on bisector
+                    pass
+                else:  # Nor start nor end of edge is on bisector
+                    if b1 and b3:  # Edge is fully under bisector
+                        pass
+                    elif b1 or b3:  # Edge intersects bisector
+                        # layer.remove_edge(edge)
+                        edges_to_remove.append(edge)
+                        # Calculate intersection edge/bisector
+                        (start_x, start_y) = mirror_point[edge.start] if b1 else (edge.start.x, edge.start.y)
+                        (end_x, end_y) = mirror_point[edge.end] if b3 else (edge.end.x, edge.end.y)
+                        t = ((start_x - (x1+x2)/2) * (x1 - x2) + (start_y - (y1+y2)/2) * (y1- y2)) / \
+                            ((end_x - start_x) * (x2 - x1) + (end_y - start_y) * (y2 - y1))
+                        x = start_x + t * (end_x - start_x)
+                        y = start_y + t * (end_y - start_y)
+                        # Intersection point
+                        point = GraphicPoint(0, 0)  # FIXME calculate relative coordinates
+                        point.x = x
+                        point.y = y
+                        edge1 = GraphicEdge2(point, edge.end)
+                        edge2 = GraphicEdge2(edge.start, point)
+                        new_edges.append(edge1)
+                        new_edges.append(edge2)
+                        layer.add_point(point)  # FIXME add to new layer too ?
+                        print "Intersection", edge, point
+                    else:  # Edge shouldn't be modified
+                        pass
+
+            for edge in edges_to_remove:
+                layer.remove_edge(edge)
+            for edge in new_edges:
+                layer.add_edge(edge)
 
             # TODO flip color
-            new_layer = Layer(points=points_to_translate)  # TODO : edges
+            new_layer = Layer(points=points_to_translate)
+            new_layer.recto = not new_layer.recto
+            # self.add_widget(new_layer)  # FIXME breaks the code ?
             self.layers.insert(i, new_layer)
+
         print self.layers
